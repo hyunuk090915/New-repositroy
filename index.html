@@ -36,17 +36,21 @@
   --red:#F04452; --red-bg:#FEECEE;
   --green:#00B26B; --green-bg:#E8F8F1;
   --orange:#F59F00; --orange-bg:#FFF6E5;
-  --purple:#8B5CF6; --purple-bg:var(--purple-bg); --purple-ink:var(--purple-ink);
+  --purple:#8B5CF6; --purple-bg:#F3EDFF; --purple-ink:#6D3BD6;
   /* 밝은 배경 위의 진한 글씨색. 다크 모드에서 이 짝이 뒤집힌다. */
-  --red-ink:var(--red-ink); --green-ink:var(--green-ink); --orange-ink:var(--orange-ink); --orange-ink2:var(--orange-ink2);
+  --red-ink:#B3242F; --green-ink:#0A6B47; --orange-ink:#7A5A10; --orange-ink2:#B77500;
   /* 면(面) 색. 카드·시트처럼 배경 위에 얹히는 것들 */
   --bg:#F2F4F6; --card:#FFFFFF; --card2:#FFFFFF;
   /* 떠 있는 알림(토스트)과 검은 배지. --ink 를 배경으로 쓰면 다크 모드에서
      --ink 가 흰색이 되면서 흰 배경 + 흰 글씨가 되어 안 읽힌다. 따로 둔다. */
   --pill-bg:#191F28; --pill-fg:#FFFFFF;
   --bar:rgba(255,255,255,.9); --bar2:rgba(255,255,255,.96);
-  --shadow:var(--shadow); --shadow2:var(--shadow2);
-  --teal:#14B8A6;
+  /* 데스크톱 상단바. 데스크톱은 본문 배경이 --g50 이라 그 색의 반투명이어야
+     자연스럽다. 이 값을 직접 박아 두면 다크 모드에서 밝은 띠만 남고
+     글씨가 안 보인다 — 실제로 그런 적이 있다. */
+  --bar-pc:rgba(249,250,251,.86);
+  --shadow:rgba(0,0,0,.08); --shadow2:rgba(0,0,0,.14);
+  --teal:#14B8A6; --teal-ink:#0B6B60; --blue-ink:#1B64DA;
   --tag-r:#E8F3FF; --tag-g:#E8F8F1; --tag-o:#FFF6E5; --tag-p:var(--purple-bg); --tag-t:#E6F7F5;
   --r:16px; --rs:12px; --rb:14px;
   --sans:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
@@ -69,8 +73,9 @@ html[data-theme="dark"]{
   /* 어두운 화면에서는 배경보다 밝은 회색으로 띄운다. 흰 알약은 밤에 눈이 부시다. */
   --pill-bg:#3C4450; --pill-fg:#F5F7FA;
   --bar:rgba(29,33,39,.92); --bar2:rgba(29,33,39,.96);
+  --bar-pc:rgba(34,39,47,.88);
   --shadow:rgba(0,0,0,.5); --shadow2:rgba(0,0,0,.6);
-  --teal:#3DD9C4;
+  --teal:#3DD9C4; --teal-ink:#7FE9DC; --blue-ink:#9CC4FD;
   --tag-r:#16233D; --tag-g:#122E24; --tag-o:#332714; --tag-p:#241C3D; --tag-t:#123030;
   color-scheme:dark;
 }
@@ -672,6 +677,12 @@ button.hero:active{transform:scale(.985);filter:brightness(.95)}
 /* 구글이 그려 넣는 버튼도 옆 버튼들과 같은 폭이 되게 한다 */
 .gsihost{display:block;width:100%}
 .gsihost>div,.gsihost iframe{width:100%!important;max-width:100%}
+/* 시트 안에서 목록 중 하나를 고르는 줄 */
+.lrow{display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:14px 15px;border-radius:var(--rs);background:var(--g100);
+  margin-bottom:8px;font-size:15px;font-weight:600;color:var(--ink);text-align:left}
+.lrow:hover{background:var(--blue-bg)}
+.lrow b{font-size:13px;font-weight:600;color:var(--g500)}
 .gbtns{display:flex;flex-direction:column;gap:9px;margin-top:26px}
 .gback{width:38px;height:38px;border-radius:11px;background:var(--g100);color:var(--g700);
   font-size:17px;display:flex;align-items:center;justify-content:center;margin-bottom:22px}
@@ -821,7 +832,7 @@ button.hero:active{transform:scale(.985);filter:brightness(.95)}
   .sd.on{background:var(--blue-bg);color:var(--blue)}
   .side .foot{margin-top:auto;padding:12px;font-size:12px;color:var(--g500);line-height:1.6}
   .tabbar{display:none}
-  .appbar{height:64px;padding:0 32px;background:rgba(249,250,251,.86)}
+  .appbar{height:64px;padding:0 32px;background:var(--bar-pc)}
   .appbar h1{font-size:19px}
   .gpane{padding-top:8vh}
   .scroll{padding-bottom:40px}
@@ -1004,7 +1015,12 @@ button.hero:active{transform:scale(.985);filter:brightness(.95)}
       <section class="screen on" id="p-home"><div class="wrap"><div id="homebody"></div></div></section>
 
       <!-- ============ 기록 ============ -->
-      <section class="screen" id="p-cal"><div class="wrap"><div class="cols">
+      <section class="screen" id="p-cal"><div class="wrap">
+        <div class="sub" id="calsub">
+          <button class="sbt on" data-v="day">달력</button>
+          <button class="sbt" data-v="mon">월간 정리</button>
+        </div>
+        <div class="cv on" id="cv-day"><div class="cols">
         <div>
           <div class="card">
             <div class="calhead">
@@ -1034,7 +1050,21 @@ button.hero:active{transform:scale(.985);filter:brightness(.95)}
             <p class="muted" style="margin-top:12px">잘한 일이 아니라 <b>한 일</b>을 적으세요. 짧을수록 좋습니다.</p>
           </div>
         </div>
-      </div></div></section>
+        </div></div>
+
+        <div class="cv" id="cv-mon">
+          <div class="card">
+            <div class="calhead">
+              <button class="mbtn" id="msPick"><span id="msYm"></span><i>▼</i></button>
+              <div class="nav2">
+                <button class="nb" id="msPrev" aria-label="이전 달">‹</button>
+                <button class="nb" id="msNext" aria-label="다음 달">›</button>
+              </div>
+            </div>
+            <div id="msBody"></div>
+          </div>
+        </div>
+      </div></section>
 
       <!-- ============ 자소서 ============ -->
       <section class="screen" id="p-jaso"><div class="wrap"><div class="cols">
@@ -1384,8 +1414,9 @@ var CONFIG={
    돌려주는 모양을 {content:[{text:...}]} 로 맞춘 이유는, 아래 다섯 곳이 이미 그
    모양을 기준으로 쓰여 있어서다. 그래야 화면을 그리는 코드를 한 줄도 안 건드린다. */
 async function aiCall(prompt,maxTokens,feature){
-  if(!CONFIG.AI_URL) throw new Error('AI_URL 미설정');
-  var res=await fetch(CONFIG.AI_URL,{
+  var url=aiUrl();
+  if(!url) throw new Error('AI_URL 미설정');
+  var res=await fetch(url,{
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({
@@ -1400,6 +1431,50 @@ async function aiCall(prompt,maxTokens,feature){
 
 /* 수집·AI·공고가 모두 같은 Apps Script 주소를 쓴다. 하나만 채워도 되게 한다. */
 function serverUrl(){ return CONFIG.AI_URL||CONFIG.COLLECT_URL||''; }
+
+/* ===== AI 서버 직접 지정 =====
+   내 컴퓨터(Colab 등)에서 직접 돌리는 AI 서버로 잠깐 바꿔 쓰는 장치다.
+   발표 시연이나 모델 비교에 쓴다.
+
+   왜 CONFIG 를 고치지 않는가
+     그 주소는 켤 때마다 바뀐다. 바뀔 때마다 index.html 을 고쳐서 GitHub 에
+     다시 올리면 1분씩 기다려야 하고, 그 사이 친구들에게도 그 주소가 나간다.
+     이 값은 내 브라우저에만 저장되므로 친구들은 영향을 받지 않는다. */
+var AI_OVERRIDE_KEY='worklog:aiurl';
+var aiOverride='';
+function loadAiOverride(){
+  try{ aiOverride=localStorage.getItem(AI_OVERRIDE_KEY)||''; }catch(e){ aiOverride=''; }
+}
+function setAiOverride(u){
+  u=String(u||'').trim();
+  if(u&&!/^https:\/\//i.test(u)) return 'https:// 로 시작하는 주소만 됩니다';
+  aiOverride=u;
+  try{ u?localStorage.setItem(AI_OVERRIDE_KEY,u):localStorage.removeItem(AI_OVERRIDE_KEY); }catch(e){}
+  aiBanner();
+  return null;
+}
+function aiUrl(){ return aiOverride||serverUrl(); }
+/* 임시 서버를 쓰는 동안에는 화면 위에 계속 띄워 둔다.
+   켜 둔 것을 잊고 "AI가 왜 안 되지" 하며 헤매는 일을 막는다. */
+function aiBanner(){
+  var el=$('aiBar');
+  if(!el){
+    el=document.createElement('div');
+    el.id='aiBar'; el.className='wbar warn';
+    document.body.insertBefore(el,document.body.firstChild);
+  }
+  if(!aiOverride){ el.hidden=true; return; }
+  el.hidden=false;
+  el.innerHTML='<div class="wb"><span><b>내 AI 서버에 연결됨</b> — '+
+    esc(aiOverride.replace(/^https:\/\//,'').slice(0,38))+
+    '</span><button id="aiBarOff">원래대로</button></div>';
+  $('aiBarOff').onclick=function(){ setAiOverride(''); toast('원래 AI로 되돌렸습니다'); renderSet(); };
+}
+loadAiOverride();
+/* 저장된 임시 서버가 있으면 앱을 열 때 배너를 다시 띄운다.
+   이게 없으면 켜 둔 것을 모르고 "친구는 되는데 나만 이상하다"가 된다.
+   화면이 준비된 뒤에 그려야 하므로 한 박자 뒤로 미룬다. */
+setTimeout(function(){ try{ aiBanner(); }catch(e){} },0);
 
 /* ===== 사람인 실제 공고 =====
    앱이 사람인을 직접 부르지 않는다. access-key 가 HTML에 있으면 저장소가
@@ -1457,7 +1532,7 @@ function jobKeywords(){
 /* AI를 아직 연결하지 않은 상태에서 친구가 버튼을 누르면, 고장난 것처럼 보이는 대신
    준비 중이라고 알려준다. */
 function aiErrMsg(base){
-  return CONFIG.AI_URL ? base
+  return aiUrl() ? base
     : 'AI 기능은 이번 베타에서 준비 중입니다. 나머지 기능은 그대로 쓰실 수 있어요.';
 }
 function liveGoogle(){ return !!CONFIG.GOOGLE_CLIENT_ID && location.protocol!=='file:'; }
@@ -1828,11 +1903,22 @@ var entries=[], myCerts=[], wantJobs=[], done={};
    나머지 편의용 데이터는 끄면 즉시 지운다. */
 var prefs={certs:true,jobs:true,done:true,favs:true,apt:true,startPage:'home'};
 var favs=[], aptResult=null, todos=[], certGoals=[];
+/* 자격증을 언제 땄는지. 취득 완료로 옮기면 준비 목록에서 빠지기 때문에
+   날짜를 따로 남기지 않으면 '이 달에 딴 자격증'을 알 수가 없다. */
+var certAt={};
+/* 달마다 AI가 정리한 문단. 한 번 만들면 저장해 둔다.
+   화면을 열 때마다 다시 부르면 무료 한도가 금방 닳고, 볼 때마다 글이
+   달라져서 "아까 본 그 문장"을 다시 못 찾는다. */
+var monthAI={};
 var cur=new Date(), sel=iso(new Date());
 var picked={}, pickTags=[], editingId=null;
 
 var TAGS=['실습','자격증','대회','프로젝트','아르바이트','기타'];
-var TAGC={'실습':'var(--blue)','자격증':'var(--green)','대회':'var(--orange)','프로젝트':'var(--purple)','아르바이트':'var(--teal)','기타':'var(--g500)'};
+/* 태그는 연한 색 배경 위에 얹힌다. --blue 같은 원색을 그대로 쓰면
+   밝은 배경에서 글씨가 묻힌다(초록 2.5:1, 주황 2.0:1이었다).
+   같은 계열의 진한 색(-ink)을 쓰면 색감은 유지하면서 읽힌다.
+   다크 모드에서는 -ink 가 밝은 쪽으로 뒤집히므로 그대로 동작한다. */
+var TAGC={'실습':'var(--blue-ink)','자격증':'var(--green-ink)','대회':'var(--orange-ink)','프로젝트':'var(--purple-ink)','아르바이트':'var(--teal-ink)','기타':'var(--g600)'};
 var TAGBG={'실습':'var(--tag-r)','자격증':'var(--tag-g)','대회':'var(--tag-o)','프로젝트':'var(--tag-p)','아르바이트':'var(--tag-t)','기타':'#F2F4F6'};
 function tagsOf(e){ return Array.isArray(e.tags)?e.tags:(e.tag?[e.tag]:[]); }
 function tagLabel(e){ var t=tagsOf(e); return t.length?t.join(' · '):'기타'; }
@@ -2298,6 +2384,8 @@ async function load(){
   if(v){ try{ entries=JSON.parse(v)||[]; }catch(e){ entries=[]; } }
   if(prefs.certs){ var c=await store.get(auth.key('certs'));
     if(c){ try{ myCerts=JSON.parse(c)||[]; }catch(e){} }
+    var ca=await store.get(auth.key('certat'));
+    if(ca){ try{ certAt=JSON.parse(ca)||{}; }catch(e){} }
     var cg=await store.get(auth.key('cgoals'));
     if(cg){ try{ certGoals=JSON.parse(cg)||[]; }catch(e){} } }
   if(prefs.jobs){ var j=await store.get(auth.key('jobs'));
@@ -2312,6 +2400,8 @@ async function load(){
     if(ap&&ap!=='null'){ try{ var o2=JSON.parse(ap); if(o2&&o2.sc) aptResult=o2; }catch(e){} } }
   /* 할 일은 활동 기록과 같은 본체 데이터라 항상 저장한다.
      계획을 세워도 저장이 안 되면 "계획 → 실행 → 기록" 흐름이 끊긴다. */
+  var ma=await store.get(auth.key('monthai'));
+  if(ma){ try{ monthAI=JSON.parse(ma)||{}; }catch(e){} }
   var td=await store.get(auth.key('todos'));
   if(td){ try{ todos=JSON.parse(td)||[]; }catch(e){} }
   betaOK=((await store.get(auth.key('beta')))==='1');
@@ -2320,7 +2410,13 @@ async function load(){
   renderCerts(); renderJobs(); renderTagPick(); render(); renderHome();
 }
 function save(){ store.set(auth.key('entries'),JSON.stringify(entries)); }
-function saveCerts(){ if(prefs.certs) store.set(auth.key('certs'),JSON.stringify(myCerts)); }
+function saveMonthAI(){ store.set(auth.key('monthai'),JSON.stringify(monthAI)); }
+
+function saveCerts(){
+  if(!prefs.certs) return;
+  store.set(auth.key('certs'),JSON.stringify(myCerts));
+  store.set(auth.key('certat'),JSON.stringify(certAt));
+}
 function saveGoals(){ if(prefs.certs) store.set(auth.key('cgoals'),JSON.stringify(certGoals)); }
 function saveJobs(){ if(prefs.jobs) store.set(auth.key('jobs'),JSON.stringify(wantJobs)); }
 function saveFavs(){
@@ -2359,6 +2455,281 @@ async function togglePref(k){
 }
 
 /* =================== 홈 =================== */
+/* ===== 월간 정리 =====
+   왜 만드는가
+     기록은 '지금 비용을 내고 1~2년 뒤에 보상을 받는' 행동이다. 그게 이 앱의
+     가장 어려운 지점이다. 월간 정리는 그 보상을 이번 달로 당겨 온다.
+     "이번 달에 이만큼 했다"가 눈에 보이면 다음 달에도 쓰게 된다.
+
+     덤으로 자소서 재료가 미리 정리된다. 3학년에 20개월치 요약이 쌓여 있으면
+     빈 화면에서 기억을 짜내지 않아도 된다. */
+
+/* 기록 본문에서 반복된 낱말을 뽑는다.
+   형태소 분석기를 넣을 수 없어서(단일 HTML 파일) 조사를 잘라내고 흔한 말을
+   걸러내는 방식으로 한다. 완벽하진 않지만 '이번 달에 뭘 많이 했는지'를
+   보여주기엔 충분하다. 이게 자소서의 축이 된다. */
+var KW_JOSA=['으로써','으로서','에서는','에게서','이라고','라고','에서','에게','으로',
+  '까지','부터','보다','조차','마저','처럼','만큼','하고','이랑','에는','과의','와의',
+  '의','를','을','이','가','은','는','에','도','로','와','과','만','랑','께','야'];
+var KW_STOP=('오늘 어제 내일 이번 다음 지난 진행 실시 완료 시작 마무리 참여 참석 배움 배우 '+
+  '공부 연습 수업 시간 부분 내용 관련 대한 통해 위해 위한 하는 하고 되는 있는 없는 것을 것이 '+
+  '그리고 하지만 그래서 다시 조금 매우 정말 열심히 성실 노력 경험 활동 기록 작업 문제 해결 '+
+  '확인 사용 이용 방법 결과 과정 이해 생각 느낌 소감 알게 되었 하였 였다 했다 한다 이다 있다 '+
+  '없다 보다 주다 받다 가다 오다 되다 오전 오후 학교 선생 친구 조원 팀원 우리 저는 나는 '+
+  '실습 자격증 대회 프로젝트 아르바이트 기타').split(/\s+/);
+
+function kwStrip(w){
+  for(var i=0;i<KW_JOSA.length;i++){
+    var j=KW_JOSA[i];
+    if(w.length>j.length+1 && w.slice(-j.length)===j) return w.slice(0,-j.length);
+  }
+  return w;
+}
+function keywordsOf(texts,minCount){
+  minCount=minCount||2;
+  var cnt={};
+  texts.forEach(function(t){
+    var toks=String(t||'').match(/[가-힣]{2,}|[A-Za-z][A-Za-z0-9]{1,}/g)||[];
+    var seen={};                      /* 한 기록 안에서 같은 말은 한 번만 센다 */
+    toks.forEach(function(w){
+      w=kwStrip(w);
+      if(w.length<2) return;
+      if(KW_STOP.indexOf(w)>-1||KW_STOP.indexOf(w.toLowerCase())>-1) return;
+      if(/^[0-9]+$/.test(w)) return;
+      var k=w.toLowerCase();
+      if(seen[k]) return; seen[k]=1;
+      cnt[w]=(cnt[w]||0)+1;
+    });
+  });
+  return Object.keys(cnt).filter(function(k){ return cnt[k]>=minCount; })
+    .sort(function(a,b){ return cnt[b]-cnt[a]||b.length-a.length; })
+    .map(function(k){ return {w:k,n:cnt[k]}; });
+}
+
+/* 한 달치를 모아 정리한다 */
+function monthData(ym){
+  var list=entries.filter(function(e){ return String(e.date||'').slice(0,7)===ym; })
+    .sort(function(a,b){ return a.date<b.date?-1:1; });
+  var days={}, tags={};
+  list.forEach(function(e){
+    days[e.date]=1;
+    (e.tags&&e.tags.length?e.tags:['기타']).forEach(function(t){ tags[t]=(tags[t]||0)+1; });
+  });
+  /* 지난달과 견준다 */
+  var y=+ym.slice(0,4), m=+ym.slice(5,7);
+  var pm=new Date(y,m-2,1);
+  var prevYm=pm.getFullYear()+'-'+String(pm.getMonth()+1).padStart(2,'0');
+  var prevN=entries.filter(function(e){ return String(e.date||'').slice(0,7)===prevYm; }).length;
+
+  /* 이 달에 딴 자격증 */
+  var got=Object.keys(certAt).filter(function(n){
+    return String(certAt[n]||'').slice(0,7)===ym;
+  });
+
+  return {
+    ym:ym, list:list, n:list.length,
+    days:Object.keys(days).length,
+    tags:Object.keys(tags).sort(function(a,b){ return tags[b]-tags[a]; })
+      .map(function(t){ return {t:t,n:tags[t]}; }),
+    kw:keywordsOf(list.map(function(e){ return e.text; }),2).slice(0,8),
+    prevN:prevN, prevYm:prevYm, certs:got
+  };
+}
+
+/* 기록이 있는 달을 최근 순으로 */
+function monthsWithData(){
+  var set={};
+  entries.forEach(function(e){ var k=String(e.date||'').slice(0,7); if(k) set[k]=1; });
+  var cur=iso(new Date()).slice(0,7); set[cur]=1;
+  return Object.keys(set).sort().reverse();
+}
+
+/* ---------- 월간 정리 화면 ---------- */
+var msYm=null;                          /* 지금 보고 있는 달 */
+
+function calSub(v){
+  cview2=v;
+  Array.prototype.forEach.call($('calsub').querySelectorAll('.sbt'),function(x){
+    x.classList.toggle('on',x.dataset.v===v);
+  });
+  $('cv-day').classList.toggle('on',v==='day');
+  $('cv-mon').classList.toggle('on',v==='mon');
+  $('abtitle').textContent = v==='mon' ? '월간 정리' : '활동 기록';
+  window.scrollTo(0,0);
+  if(v==='mon') renderMonth();
+}
+var cview2='day';
+
+function renderMonth(){
+  if(!msYm) msYm=iso(new Date()).slice(0,7);
+  var d=monthData(msYm);
+  var y=+msYm.slice(0,4), m=+msYm.slice(5,7);
+  $('msYm').textContent=y+'년 '+m+'월';
+
+  /* 다음 달로는 오늘이 든 달까지만 */
+  var cur=iso(new Date()).slice(0,7);
+  $('msNext').disabled = msYm>=cur;
+  $('msNext').style.opacity = msYm>=cur ? '.35' : '';
+
+  if(!d.n){
+    /* 빈 달을 '실패'처럼 보이게 하면 안 된다. 다음 행동만 알려준다. */
+    var isCur = msYm===cur;
+    $('msBody').innerHTML='<div class="blank" style="padding:30px 16px"><b>'+
+      (isCur?'이번 달은 아직 비어 있어요':'이 달에는 기록이 없어요')+'</b><span>'+
+      (isCur?'한 줄이면 충분해요.<br>오늘 만진 것, 배운 것을 적어보세요.'
+            :'지난 달을 보려면 ‹ 를 눌러보세요.')+'</span></div>'+
+      (isCur?'<button class="btn" id="msGo" style="margin-top:4px">오늘 기록 남기기</button>':'');
+    if($('msGo')) $('msGo').onclick=function(){ calSub('day'); focusEntry(); };
+    return;
+  }
+
+  var h='';
+
+  /* 한 줄 요약 */
+  var diff=d.n-d.prevN;
+  h+='<div class="hero" style="margin:2px 0 14px;padding:18px">'+
+    '<div class="hi">'+y+'년 '+m+'월</div>'+
+    '<div class="ht" style="font-size:19px">기록 '+d.n+'건 · '+d.days+'일 활동</div>'+
+    '<div class="nx" style="margin-top:8px">'+
+      (d.prevN? (diff>0?'지난달보다 '+diff+'건 더 남겼어요'
+                :(diff<0?'지난달보다 '+(-diff)+'건 적어요':'지난달과 같아요'))
+              :'꾸준히 쌓이면 자소서가 저절로 채워져요')+'</div></div>';
+
+  /* AI 한 문단 정리 */
+  var ai=monthAI[msYm];
+  h+='<div id="msAiBox">';
+  if(ai&&ai.summary){
+    h+='<div class="card" style="padding:17px;margin-bottom:14px">'+
+      '<div class="st" style="margin-bottom:9px">이 달 한눈에 <span class="badge md">AI 정리</span></div>'+
+      '<p style="font-size:14.5px;line-height:1.7">'+esc(ai.summary)+'</p>'+
+      (ai.highlight?'<div class="have" style="margin-top:12px"><b>자소서에 쓰기 좋은 것</b><br>'+
+        esc(ai.highlight)+'</div>':'')+
+      (ai.next?'<div class="tip" style="margin-top:9px"><b>다음 달에는</b><br>'+
+        esc(ai.next)+'</div>':'')+
+      '<div class="pdate" style="margin-top:11px">'+esc(ai.at)+' 기준 · 기록 '+(ai.n||0)+'건'+
+        (ai.n!==d.n?' (그 뒤로 기록이 바뀌었어요)':'')+'</div>'+
+      '<button class="mini" id="msAiGo" style="margin-top:10px">다시 정리하기</button>'+
+      '</div>';
+  }else if(aiUrl()){
+    h+='<div class="gnote" style="margin-bottom:14px">'+
+      '<b>이 달을 한 문단으로 정리해 드릴까요?</b> 기록을 읽고 자소서에 바로 쓸 수 있는 '+
+      '문장으로 묶어 줍니다.'+
+      '<div style="margin-top:11px"><button class="mini blue" id="msAiGo">AI로 정리하기 →</button></div></div>';
+  }else{
+    h+='<div class="gnote" style="margin-bottom:14px">'+
+      '<b>아래는 앱이 직접 세어 정리한 것입니다.</b> AI를 연결하면 이 달을 한 문단으로 '+
+      '묶어 주는 정리도 함께 볼 수 있어요.</div>';
+  }
+  h+='</div>';
+
+  /* 반복된 주제 — 자소서의 축이 되는 부분 */
+  if(d.kw.length){
+    h+='<div class="setsec" style="margin-top:2px">이 달에 반복한 것</div>'+
+      '<div class="chips" style="margin-bottom:6px">'+
+      d.kw.map(function(k){
+        return '<span class="ch" style="pointer-events:none">'+esc(k.w)+
+          ' <b style="color:var(--blue)">'+k.n+'</b></span>';
+      }).join('')+'</div>'+
+      '<p class="muted" style="margin-bottom:14px">여러 번 나온 낱말입니다. '+
+      '가장 많이 한 것이 자소서에서 가장 할 말이 많은 주제입니다.</p>';
+  }
+
+  /* 태그별 */
+  if(d.tags.length){
+    h+='<div class="setsec">종류별</div><div class="card" style="padding:14px 16px">'+
+      d.tags.map(function(t){
+        return '<div class="ditem"><span>'+tagHtml(t.t)+'</span><b>'+t.n+'건</b></div>';
+      }).join('')+'</div>';
+  }
+
+  /* 이 달에 딴 자격증 */
+  if(d.certs.length){
+    h+='<div class="setsec">이 달에 딴 자격증</div><div class="card" style="padding:14px 16px">'+
+      d.certs.map(function(n){
+        return '<div class="ditem"><span>'+esc(n)+'</span><b style="color:var(--green)">취득</b></div>';
+      }).join('')+'</div>';
+  }
+
+  /* 날짜별 기록 */
+  h+='<div class="setsec">이 달에 한 일</div>';
+  var byDay={};
+  d.list.forEach(function(e){ (byDay[e.date]=byDay[e.date]||[]).push(e); });
+  Object.keys(byDay).sort().forEach(function(dt){
+    h+='<div class="card" style="padding:13px 15px;margin-bottom:8px">'+
+      '<div class="sub2" style="margin-bottom:7px">'+kdate(dt)+'</div>'+
+      byDay[dt].map(function(e){
+        return '<div class="rec"><span class="tt">'+tagHtml(tagLabel(e))+' '+esc(e.text)+'</span></div>';
+      }).join('')+'</div>';
+  });
+
+  /* 자소서로 넘기기 */
+  h+='<div class="gnote" style="margin-top:14px"><b>이 달 기록으로 자소서를 써볼까요?</b> '+
+    '위에 반복해서 나온 주제가 있다면 그게 가장 쓰기 좋은 소재입니다.'+
+    '<div style="margin-top:11px"><button class="mini blue" id="msJaso">자소서 초안 만들기 →</button></div></div>';
+
+  $('msBody').innerHTML=h;
+  if($('msJaso')) $('msJaso').onclick=function(){ go('jaso'); };
+  if($('msAiGo')) $('msAiGo').onclick=function(){ makeMonthAI(msYm); };
+}
+
+/* 이 달을 한 문단으로 정리한다.
+   계산으로 만든 부분(건수·태그·반복 낱말)은 그대로 두고 그 위에 얹는다.
+   AI가 없거나 실패해도 나머지는 그대로 보인다. */
+async function makeMonthAI(ym){
+  var d=monthData(ym);
+  if(!d.n){ toast('이 달에는 기록이 없어요'); return; }
+
+  var box=$('msAiBox');
+  if(box) box.innerHTML='<div class="load"><span class="pulse"><i></i><i></i><i></i></span>'+
+    '이 달 기록을 읽는 중</div>';
+
+  var recs=d.list.map(function(e){
+    return '- '+e.date+' ['+tagLabel(e)+'] '+e.text;
+  }).join('\n');
+  var y=+ym.slice(0,4), m=+ym.slice(5,7);
+
+  var prompt=
+'당신은 특성화고 취업 담당 선생님입니다. 학생이 한 달 동안 남긴 기록을 읽고,\n'+
+'나중에 자기소개서를 쓸 때 바로 쓸 수 있게 한 문단으로 정리해 줍니다.\n\n'+
+'[정리할 달]\n'+y+'년 '+m+'월\n\n'+
+'[학생이 남긴 기록]\n'+recs+'\n\n'+
+(d.kw.length?'[여러 번 나온 낱말]\n'+d.kw.map(function(k){return k.w+'('+k.n+'회)';}).join(', ')+'\n\n':'')+
+(d.certs.length?'[이 달에 딴 자격증]\n'+d.certs.join(', ')+'\n\n':'')+
+'규칙:\n'+
+'1. 기록에 없는 것을 지어내지 마세요. 적힌 사실만 씁니다.\n'+
+'2. summary 는 3~5문장. 이 달에 무엇을 했고 무엇이 늘었는지 씁니다.\n'+
+'   흩어진 기록을 묶어서 "무슨 갈래의 일을 했는지"가 보이게 씁니다.\n'+
+'3. 장비 이름·수치·용어를 그대로 살립니다. (예: 버니어캘리퍼스, ±0.02mm)\n'+
+'4. "성실히", "많은 것을 배웠습니다", "노력했습니다" 같은 말은 쓰지 않습니다.\n'+
+'5. highlight 는 이 달에서 자소서에 쓰기 가장 좋은 한 가지를 고릅니다.\n'+
+'6. next 는 다음 달에 어떤 기록을 더 남기면 좋을지 한 문장으로 적습니다.\n'+
+'   기록이 적었다면 나무라지 말고 무엇을 적으면 되는지만 알려줍니다.\n\n'+
+'아래 JSON만 출력하세요. 설명, 마크다운 코드펜스 금지.\n'+
+'{"summary":"한 문단","highlight":"자소서에 쓰기 좋은 한 가지","next":"다음 달에 남기면 좋을 기록"}';
+
+  try{
+    var r=await aiCall(prompt,700,'월간요약');
+    var txt=r.content.map(function(i){return i.text||'';}).join('\n');
+    var o=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    monthAI[ym]={summary:o.summary||'',highlight:o.highlight||'',next:o.next||'',
+                 at:iso(new Date()),n:d.n};
+    await saveMonthAI();
+    renderMonth();
+    toast('이 달을 정리했습니다');
+  }catch(e){
+    if(box) box.innerHTML='<div class="err">'+
+      aiErrMsg('정리를 만들지 못했습니다. 잠시 후 다시 눌러보세요.')+'</div>';
+  }
+}
+
+function msShift(n){
+  var y=+msYm.slice(0,4), m=+msYm.slice(5,7);
+  var d=new Date(y,m-1+n,1);
+  var next=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  if(next>iso(new Date()).slice(0,7)) return;
+  msYm=next; renderMonth();
+}
+
 function weekCount(){
   var t=new Date(), d=t.getDay(), s=new Date(t.getFullYear(),t.getMonth(),t.getDate()-d);
   return entries.filter(function(e){ return new Date(e.date+'T00:00:00')>=s; }).length;
@@ -2810,17 +3181,55 @@ $('gen').onclick=async function(){
 
   var recs=chosen.map(function(e){return '- '+e.date+' ['+tagLabel(e)+'] '+e.text;}).join('\n');
   var prompt=
-'당신은 한국 고졸·전문대 취업 준비생의 자기소개서를 돕는 코치입니다.\n\n'+
+/* ── 프롬프트 ──
+   여기가 이 기능의 품질을 거의 결정한다. 모델을 따로 학습시키지 않아도
+   '좋은 글이 어떤 것인지'를 예시로 보여주면 문체가 크게 달라진다.
+   (few-shot: 규칙만 적는 것보다 예시 한 개가 더 잘 먹는다)
+
+   예시를 넣을 때 조심할 것
+     예시 내용을 그대로 베껴 쓰는 사고가 난다. 그래서 (1) 지원자와 겹치지
+     않는 분야(전기·설비)로 쓰고 (2) 베끼지 말라고 못을 박는다. */
+'당신은 특성화고 취업 담당 선생님입니다. 학생이 실제로 남긴 활동 기록만 가지고\n'+
+'채용 담당자가 읽을 자기소개서 초안을 씁니다.\n\n'+
+
+'=== 좋은 문장과 나쁜 문장 ===\n'+
+'나쁨: 저는 항상 성실한 자세로 실습에 임했습니다.\n'+
+'좋음: 브레이크 라이닝 마모를 측정할 때 규정값 1.6mm를 기준으로 세 번 재서 평균을 냈습니다.\n'+
+'  → 태도를 말하지 말고 그 태도가 드러난 행동을 쓴다.\n\n'+
+'나쁨: 문제가 생겼을 때 끝까지 해결하려 노력했습니다.\n'+
+'좋음: 가공 중 표면이 거칠어져 공구 날을 확인했더니 마모가 있었고, 교체 후 다시 측정해 기준 안에 들어왔습니다.\n'+
+'  → 무슨 문제였는지, 무엇을 했는지, 어떻게 됐는지 순서로 쓴다.\n\n'+
+'나쁨: 이러한 경험을 통해 많은 것을 배울 수 있었습니다.\n'+
+'좋음: 이 실습 이후로는 가공 전에 공구 상태를 먼저 확인하는 습관이 생겼습니다.\n'+
+'  → 배웠다고 말하지 말고 무엇이 달라졌는지 쓴다.\n\n'+
+
+'=== 완성 예시 (문체만 참고. 내용은 절대 가져다 쓰지 마세요) ===\n'+
+'{"title":"차단기 하나를 두 번 확인하는 이유",\n'+
+' "paragraphs":[\n'+
+'  {"text":"실습실 배전반 점검에서 차단기 용량 표기와 실제 부하 계산값이 맞지 않는 것을 발견했습니다. 도면을 다시 확인해 분기 회로 하나가 누락된 것을 찾았고, 담당 선생님께 보고한 뒤 도면을 수정했습니다.","sources":["2026-03-14"]},\n'+
+'  {"text":"이후 점검에서는 표기값을 그대로 믿지 않고 부하를 직접 계산해 대조하는 순서를 만들었습니다. 같은 방식으로 두 번째 배전반에서도 접지선 규격이 도면과 다른 것을 확인했습니다.","sources":["2026-04-02"]}],\n'+
+' "tip":"측정 수치를 더 남겨두면 문장이 구체적으로 바뀝니다"}\n\n'+
+
+'=== 이번에 쓸 것 ===\n'+
 '[문항]\n'+$('q').value.trim()+'\n\n'+
 '[지원 직무/회사]\n'+($('job').value.trim()||'미지정')+'\n\n'+
-'[지원자가 실제로 기록한 활동]\n'+recs+'\n\n'+
+'[학생이 실제로 기록한 활동]\n'+recs+'\n\n'+
 '[추가 강조 내용]\n'+($('extra').value.trim()||'없음')+'\n\n'+
+
 '규칙:\n'+
-'1. 위 기록에 없는 경험을 지어내지 마세요. 기록에 적힌 사실만 사용합니다.\n'+
+'1. 위 기록에 없는 경험을 지어내지 마세요. 기록에 적힌 사실만 씁니다.\n'+
+'   기록이 부족해서 문항을 다 채우지 못하겠으면, 억지로 늘리지 말고\n'+
+'   tip 에 "어떤 기록을 더 남기면 좋은지"를 적으세요.\n'+
 '2. 전체 '+$('len').value+'자 내외, 문단 3~4개.\n'+
-'3. 각 문단은 어떤 날짜 기록에 근거했는지 sources에 날짜(YYYY-MM-DD)로 표시합니다.\n'+
-'4. 과장된 미사여구 대신 구체적인 행동과 수치 위주로 씁니다.\n'+
-'5. "저는 ~라고 생각합니다" 같은 상투적 표현을 피합니다.\n\n'+
+'3. 문단마다 근거가 된 기록 날짜를 sources 에 YYYY-MM-DD 로 적습니다.\n'+
+'4. 각 문단은 첫 문장에 결론을 두고, 그 뒤에 행동과 결과를 씁니다.\n'+
+'5. 기록에 있는 장비 이름·수치·용어를 그대로 살려 씁니다.\n'+
+'   (예: 버니어캘리퍼스, ±0.02mm, 4조 2교대)\n'+
+'6. 다음 표현은 쓰지 마세요 —\n'+
+'   "성실히", "최선을 다해", "많은 것을 배웠습니다", "~라고 생각합니다",\n'+
+'   "귀사", "열정을 가지고", "노력하겠습니다", "임하였습니다"\n'+
+'7. 소제목(title)은 학생이 한 일이 드러나게 짓습니다. 추상적인 각오는 안 됩니다.\n\n'+
+
 '아래 JSON만 출력하세요. 설명, 마크다운 코드펜스 금지.\n'+
 '{"title":"소제목","paragraphs":[{"text":"문단 내용","sources":["YYYY-MM-DD"]}],"tip":"보완하면 좋을 점 한 문장"}';
 
@@ -4008,6 +4417,7 @@ function renderCertMy(){
       if(st==='취득 완료'){
         certGoals=certGoals.filter(function(x){ return x.n!==n; });
         if(myCerts.indexOf(n)<0) myCerts.push(n);
+        certAt[n]=iso(new Date());
         saveGoals(); saveCerts(); renderCerts(); renderCertMy(); renderHome();
         toast(n+' 취득 완료로 옮겼습니다');
         return;
@@ -4636,6 +5046,23 @@ function renderPDay(){
   $('pdlist').innerHTML=h;
   bindStars('pdlist');
 }
+Array.prototype.forEach.call($('calsub').querySelectorAll('.sbt'),function(b){
+  b.onclick=function(){ calSub(this.dataset.v); };
+});
+$('msPrev').onclick=function(){ msShift(-1); };
+$('msNext').onclick=function(){ msShift(1); };
+$('msPick').onclick=function(){
+  var ms=monthsWithData();
+  openSheet('달 고르기', ms.map(function(k){
+    var n=entries.filter(function(e){ return String(e.date||'').slice(0,7)===k; }).length;
+    return '<button class="lrow" data-ym="'+k+'"><span>'+
+      k.slice(0,4)+'년 '+(+k.slice(5,7))+'월</span><b>'+(n?n+'건':'기록 없음')+'</b></button>';
+  }).join(''));
+  Array.prototype.forEach.call($('sheet').querySelectorAll('[data-ym]'),function(b){
+    b.onclick=function(){ msYm=this.dataset.ym; closeSheet(); renderMonth(); };
+  });
+};
+
 $('pprev').onclick=function(){ pcur=new Date(pcur.getFullYear(),pcur.getMonth()-1,1); renderPCal(); };
 $('pnext').onclick=function(){ pcur=new Date(pcur.getFullYear(),pcur.getMonth()+1,1); renderPCal(); };
 $('pmbtn').onclick=function(){ pcur=new Date(); psel=iso(new Date()); renderPCal(); };
@@ -5459,6 +5886,18 @@ async function renderSet(){
     '<label class="lb">예시 데이터</label>'+
     '<button class="mini blue" id="stSeed">예시 기록 3개 넣기</button>'+
     '<p class="muted" style="margin-top:11px">발표나 시연 때 빈 화면 대신 보여줄 기록을 채웁니다.</p>'+
+    '<label class="lb">AI 서버 직접 지정</label>'+
+    '<input class="f" id="stAiUrl" placeholder="https://xxxx.trycloudflare.com" '+
+      'value="'+esc(aiOverride)+'" autocomplete="off" spellcheck="false">'+
+    '<div class="frow" style="margin-top:9px">'+
+      '<button class="btn sub sm" id="stAiSave">연결</button>'+
+      '<button class="btn sub sm auto" id="stAiClear">비우기</button></div>'+
+    '<p class="muted" style="margin-top:11px">'+
+      (aiOverride
+        ? '<b>지금 내 AI 서버를 쓰고 있습니다.</b> 이 설정은 이 브라우저에만 저장되고 '+
+          '친구들에게는 영향이 없습니다. 비우면 원래 AI로 돌아갑니다.'
+        : 'Colab 같은 곳에서 내가 직접 돌리는 AI 서버가 있으면 그 주소를 넣습니다. '+
+          '발표 시연이나 모델 비교용이고, 비워 두면 기본 AI를 씁니다.')+'</p>'+
     '</div>';
 
   /* --- 내보내기 --- */
@@ -5618,6 +6057,16 @@ async function renderSet(){
   });
 
   $('stSeed').onclick=function(){ seedDemo(); renderSet(); };
+
+  if($('stAiSave')) $('stAiSave').onclick=function(){
+    var err=setAiOverride($('stAiUrl').value);
+    if(err){ toast(err); return; }
+    toast(aiOverride?'내 AI 서버에 연결했습니다':'원래 AI로 되돌렸습니다');
+    renderSet();
+  };
+  if($('stAiClear')) $('stAiClear').onclick=function(){
+    setAiOverride(''); toast('원래 AI로 되돌렸습니다'); renderSet();
+  };
   $('stTxt').onclick=exportTxt;
   $('stJson').onclick=exportJson;
   $('stImp').onclick=pickImport;
@@ -5695,7 +6144,7 @@ async function doLogout(){
 }
 async function doWipe(){
   entries=[]; myCerts=[]; wantJobs=[]; done={}; picked={}; favs=[]; aptResult=null; todos=[]; certGoals=[];
-  savedLive=[]; liveJobs=[]; liveState='idle';
+  savedLive=[]; liveJobs=[]; liveState='idle'; certAt={}; monthAI={};
   await store.set(auth.key('entries'),'[]');
   await store.set(auth.key('todos'),'[]');
   await clearKey('favs');
