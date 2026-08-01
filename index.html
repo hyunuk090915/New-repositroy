@@ -1425,7 +1425,14 @@ async function aiCall(prompt,maxTokens,feature){
     })
   });
   var d=await res.json();
-  if(!d.ok) throw new Error(d.error||'AI 응답 실패');
+  if(!d.ok){
+    /* 서버가 보낸 문장을 그대로 학생에게 보여주려고 표식을 단다.
+       "오늘 25번 다 썼어요"와 "30초 뒤에 다시"는 학생이 해야 할 행동이
+       다르다. 뭉뚱그려 "실패했습니다"라고 하면 그 차이가 사라진다. */
+    var e=new Error(d.error||'AI 응답 실패');
+    e.fromServer=true;
+    throw e;
+  }
   return { content:[{ text:d.text||'' }] };
 }
 
@@ -1531,9 +1538,13 @@ function jobKeywords(){
 
 /* AI를 아직 연결하지 않은 상태에서 친구가 버튼을 누르면, 고장난 것처럼 보이는 대신
    준비 중이라고 알려준다. */
-function aiErrMsg(base){
-  return aiUrl() ? base
-    : 'AI 기능은 이번 베타에서 준비 중입니다. 나머지 기능은 그대로 쓰실 수 있어요.';
+function aiErrMsg(base,err){
+  if(!aiUrl())
+    return 'AI 기능은 이번 베타에서 준비 중입니다. 나머지 기능은 그대로 쓰실 수 있어요.';
+  /* 서버가 이유를 알려줬으면 그걸 보여준다. 학생이 다음에 뭘 해야 하는지가
+     달라지기 때문이다(잠깐 기다리기 / 내일 다시 / 만든 사람에게 알리기). */
+  if(err&&err.fromServer&&err.message) return esc(err.message);
+  return base;
 }
 function liveGoogle(){ return !!CONFIG.GOOGLE_CLIENT_ID && location.protocol!=='file:'; }
 /* 진짜 구글 로그인이 안 뜨는 이유를 구분한다. 이유를 알려주지 않으면
@@ -2405,6 +2416,9 @@ async function load(){
   var td=await store.get(auth.key('todos'));
   if(td){ try{ todos=JSON.parse(td)||[]; }catch(e){} }
   betaOK=((await store.get(auth.key('beta')))==='1');
+  betaAt=(await store.get(auth.key('betaAt')))||'';
+  betaFail=Number(await store.get(auth.key('betaFail')))||0;
+  betaFailAt=(await store.get(auth.key('betaFailAt')))||'';
   betaLast=(await store.get(auth.key('betaLast')))||'';
   betaCount=parseInt((await store.get(auth.key('betaN')))||'0',10)||0;
   renderCerts(); renderJobs(); renderTagPick(); render(); renderHome();
@@ -2718,7 +2732,7 @@ async function makeMonthAI(ym){
     toast('이 달을 정리했습니다');
   }catch(e){
     if(box) box.innerHTML='<div class="err">'+
-      aiErrMsg('정리를 만들지 못했습니다. 잠시 후 다시 눌러보세요.')+'</div>';
+      aiErrMsg('정리를 만들지 못했습니다. 잠시 후 다시 눌러보세요.',e)+'</div>';
   }
 }
 
@@ -3239,7 +3253,7 @@ $('gen').onclick=async function(){
     var obj=JSON.parse(txt.replace(/```json|```/g,'').trim());
     show(obj,chosen); mark('jaso');
   }catch(err){
-    box.innerHTML='<div class="err">'+aiErrMsg('초안을 만들지 못했습니다. 잠시 후 다시 시도하거나, 선택한 기록 수를 줄여보세요.')+'</div>';
+    box.innerHTML='<div class="err">'+aiErrMsg('초안을 만들지 못했습니다. 잠시 후 다시 시도하거나, 선택한 기록 수를 줄여보세요.',err)+'</div>';
   }
   this.disabled=false;
 };
@@ -3728,7 +3742,7 @@ async function makePlan(k,btn){
     planCache[k]={p:p,co:o.c.n};
     drawPlan(k,box);
   }catch(e){
-    box.innerHTML='<div class="err" style="margin-top:10px">'+aiErrMsg('계획을 만들지 못했습니다. 다시 눌러주세요.')+'</div>';
+    box.innerHTML='<div class="err" style="margin-top:10px">'+aiErrMsg('계획을 만들지 못했습니다. 다시 눌러주세요.',e)+'</div>';
   }
   btn.disabled=false;
 }
@@ -3907,7 +3921,7 @@ async function rvFit(id,btn){
       '내가 넣은 자격증·활동 기록·적성만 근거로 판단합니다. 기록을 더 남길수록 판단이 정확해져요.</span></div></div>';
     rvFitCache[id]=h; box.innerHTML=h;
   }catch(e){
-    box.innerHTML='<div class="err" style="margin-top:10px">'+aiErrMsg('판단을 만들지 못했습니다. 다시 눌러주세요.')+'</div>';
+    box.innerHTML='<div class="err" style="margin-top:10px">'+aiErrMsg('판단을 만들지 못했습니다. 다시 눌러주세요.',e)+'</div>';
   }
   btn.disabled=false;
 }
@@ -3970,7 +3984,7 @@ $('genQ').onclick=async function(){
     });
     mark('itv');
   }catch(e){
-    box.innerHTML='<div class="card"><div class="err">'+aiErrMsg('질문을 만들지 못했습니다. 다시 눌러주세요.')+'</div></div>';
+    box.innerHTML='<div class="card"><div class="err">'+aiErrMsg('질문을 만들지 못했습니다. 다시 눌러주세요.',e)+'</div></div>';
   }
   this.disabled=false;
 };
@@ -4004,7 +4018,7 @@ async function feedback(i,btn){
       (p.rewrite?'<div class="fbl r"><b>이렇게 답하면</b>'+esc(p.rewrite)+'</div>':'')+
       '</div>';
   }catch(e){
-    fb.innerHTML='<div class="err" style="margin-top:10px">'+aiErrMsg('피드백을 받지 못했습니다. 다시 눌러주세요.')+'</div>';
+    fb.innerHTML='<div class="err" style="margin-top:10px">'+aiErrMsg('피드백을 받지 못했습니다. 다시 눌러주세요.',e)+'</div>';
   }
   btn.disabled=false;
 }
@@ -5366,6 +5380,10 @@ function renderConsent(){
 async function setConsent(yes){
   betaOK=yes;
   await store.set(auth.key('beta'),yes?'1':'0');
+  if(yes&&!betaAt){
+    betaAt=new Date().toISOString();
+    await store.set(auth.key('betaAt'),betaAt);
+  }
   hideGate();
   await enterApp();
   if(yes){ toast('고맙습니다 — 설정에서 언제든 끌 수 있어요'); sendBeta('signup'); }
@@ -5387,6 +5405,12 @@ async function afterAuth(isNew){
    써보고 확인한 다음, 안 되면 눈에 띄게 알리고 어떻게 열면 되는지까지 안내한다. */
 var storeOK=true, inApp=false, inAppName='';
 var betaOK=false, betaLast='', betaCount=0;
+/* 연구 운영에 필요한 것들.
+   betaAt   : 언제 동의했는지. 두 달짜리 연구에서는 '언제부터 참여했는지'가
+              데이터를 읽을 때 기준이 된다.
+   betaFail : 연속으로 전송에 실패한 횟수. 조용히 실패하면 두 달 뒤에야
+              "얘 데이터가 없네"를 알게 된다. 그 전에 알아채려고 센다. */
+var betaAt='', betaFail=0, betaFailAt='';
 var IN_APPS=[['KAKAOTALK','카카오톡'],['Instagram','인스타그램'],['FBAN','페이스북'],
  ['FBAV','페이스북'],['FB_IAB','페이스북'],['Line/','라인'],['NAVER(','네이버 앱'],
  ['DaumApps','다음 앱'],['everytimeApp','에브리타임'],['Snapchat','스냅챗'],['TikTok','틱톡']];
@@ -5469,6 +5493,7 @@ function betaPayload(kind,note){
   var u=auth.user||{};
   return {
     v:1, kind:kind, beta:CONFIG.BETA, at:new Date().toISOString(), day:stamp(),
+    consentAt:betaAt||null, failCount:betaFail,
     user:{ id:u.id||null, name:u.name||null, gmail:u.gmail||null,
            viaGoogle:!!u.viaGoogle, guest:auth.isGuest() },
     idToken:gToken||null,
@@ -5525,17 +5550,52 @@ async function sendBeta(kind,note,loud){
         body:fd.join('&') });
     }
     betaLast=new Date().toISOString(); betaCount++;
+    betaFail=0; betaFailAt='';
     await store.set(auth.key('betaLast'),betaLast);
     await store.set(auth.key('betaN'),String(betaCount));
+    await store.set(auth.key('betaFail'),'0');
+    await store.set(auth.key('betaFailAt'),'');
     if(loud) toast('보냈습니다 — 도착 확인은 만든 사람이 합니다');
     return true;
   }catch(e){
+    /* 조용히 실패해도 흔적은 남긴다. 며칠 쌓이면 설정 화면에서 알려준다. */
+    betaFail++; betaFailAt=new Date().toISOString();
+    try{
+      await store.set(auth.key('betaFail'),String(betaFail));
+      await store.set(auth.key('betaFailAt'),betaFailAt);
+    }catch(e2){}
     if(loud){
       makeBundle(body);
       toast('전송이 막혀서 파일로 저장했습니다 — 카톡으로 보내주세요');
     }
     return false;
   }
+}
+
+/* 전송이 막혀 있으면 설정 화면 위쪽에 띄운다.
+   두 달짜리 연구에서 제일 무서운 건 '조용히 안 오고 있는 것'이다.
+   마지막에 가서야 알면 그 학생의 두 달이 통째로 없다. */
+function stuckBox(){
+  if(!betaOK||!liveCollect()) return '';
+  if(betaFail<2 && betaStuckDays()<4) return '';
+  var d=betaStuckDays();
+  return '<div class="warnbox" style="margin-bottom:13px">'+
+    '<b>기록이 며칠째 전달되지 않고 있어요'+(d>0?' ('+d+'일)':'')+'</b><br>'+
+    '내 기록은 이 기기에 그대로 있으니 사라지지 않았어요. '+
+    '다만 선생님께 전달이 안 되고 있습니다. 아래를 눌러 보세요.'+
+    '<div class="frow" style="margin-top:11px">'+
+    '<button class="btn sub sm" id="stStuckGo">지금 다시 보내기</button>'+
+    '<button class="btn sub sm auto" id="stStuckFile">파일로 만들어 보내기</button></div>'+
+    '<div class="pdate" style="margin-top:9px">카카오톡 안에서 열면 전송이 막힐 수 있어요. '+
+    '크롬이나 사파리로 열어보세요.</div></div>';
+}
+
+/* 며칠째 못 보내고 있는지 */
+function betaStuckDays(){
+  if(!betaOK||!liveCollect()) return 0;
+  var ref=betaLast||betaAt;
+  if(!ref) return 0;
+  return Math.floor((Date.now()-new Date(ref).getTime())/864e5);
 }
 /* 인터넷이 없거나 전송이 막혔을 때. 파일 하나로 만들어 카톡으로 보내면 된다. */
 function makeBundle(body){
@@ -5932,6 +5992,11 @@ async function renderSet(){
        :(googleWhy()==='file'?'<span style="color:var(--orange)">막힘 · 파일로 열림</span>'
        :(googleWhy()==='offline'?'<span style="color:var(--orange)">막힘 · 연결 안 됨</span>'
        :'꺼짐 · 클라이언트 ID 없음')))+'</span></div>'+
+    stuckBox()+
+    (betaOK&&betaAt?'<div class="prow"><span class="pk">참여 시작</span><span class="pv">'+
+      esc(String(betaAt).slice(0,10))+'</span></div>':'')+
+    (betaFail>0?'<div class="prow"><span class="pk">전송 실패</span>'+
+      '<span class="pv" style="color:var(--orange-ink2)">'+betaFail+'번 연속</span></div>':'')+
     '<div class="prow"><span class="pk">보내는 방법</span><span class="pv">'+
       (liveCollect()?esc(collectHow()):'파일로 직접 보내기')+'</span></div>'+
     (betaOK?'<div class="prow"><span class="pk">마지막 전송</span><span class="pv">'+
@@ -6075,6 +6140,10 @@ async function renderSet(){
   if($('stWhat')) $('stWhat').onclick=whatWeSend;
   if($('stNow')) $('stNow').onclick=async function(){ await sendBeta('manual',null,true); renderSet(); };
   if($('stBundle')) $('stBundle').onclick=bundleSheet;
+  if($('stStuckGo')) $('stStuckGo').onclick=async function(){
+    await sendBeta('manual',null,true); renderSet();
+  };
+  if($('stStuckFile')) $('stStuckFile').onclick=bundleSheet;
   if($('stBeta')) $('stBeta').onclick=async function(){
     betaOK=!betaOK;
     await store.set(auth.key('beta'),betaOK?'1':'0');
